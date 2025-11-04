@@ -1,6 +1,6 @@
 
 REF_GSE_ID <- "GSE90496"
-VAL_GSE_ID <- "GSE109381"
+VAL_GSE_ID <- "GSE109379"
 
 loadSavedAnno <- function (gse_id, save_tag = "") {
 

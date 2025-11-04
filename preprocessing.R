@@ -95,16 +95,22 @@ preprocessSamples <- function (gse_id, save_tag = "") {
     mset <- getFilteredMethylSet(mset)
     saveRDS(mset, file=file.path("results", paste0(save_tag, gse_id,"_mset.rds")))
 
-    # get batch adjusted methyls
     methy <- getMeth(mset)
     unmethy <- getUnmeth(mset)
-    ba <- getBatchAdjustedMethyls(methy, unmethy, material)
 
     if (gse_id == REF_GSE_ID) {
+    
+        # get batch adjusted methyls
+        ba <- getBatchAdjustedMethyls(methy, unmethy, material)
 
         # save batch effect coefs for future diagnostic samples
         coefs <- getBatchEffectCoefs(methy, unmethy, ba$methy.ba, ba$unmethy.ba, material)
         saveRDS(coefs, file=file.path("results", paste0(save_tag, gse_id,"_coefs.rds")))
+    }
+    else { # gse_id == VAL_GSE_ID
+
+        # TODO: use coefs to make these batch adjustments
+        ba <- list(methy.ba = methy, unmethy.ba = unmethy)
     }
 
     # recalculate betas using the Illumina Genome Studio offset
