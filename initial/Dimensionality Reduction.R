@@ -1,31 +1,36 @@
 ## -- 02 Visualize Dimensional reduction -- ##
 
 # Load librarires
-#library(matrixStats)
-#library(uwot)
-#library(ggplot2)
-#library(cluster)
-#library(ggforce)
+library(matrixStats)
+library(uwot)
+library(ggplot2)
+library(cluster)
+library(ggforce)
 library(RColorBrewer)
-library(viridis)
-#library(Polychrome)
-library(dplyr)
-#library(ggrepel)
-#
 library(GEOquery)
-library(minfi)
+library(viridis)
+library(Polychrome)
+library(dplyr)
+library(ggrepel)
 
-# load beta matrix
+# -----------------------------
+# 1. Load beta matrix
+# -----------------------------
 beta <- readRDS("data_raw/beta_filtered_GSE90496.RDS")
+dim(beta)
 
-# select top 32,000 variably methylated probes (Capper)
+# -----------------------------
+# 2. Select top variable probes
+# -----------------------------
 vars <- rowVars(beta, na.rm = TRUE)
-top_idx <- order(vars, decreasing = TRUE)[1:32000]   
-beta_top <- t(beta[top_idx, ])  
+top_idx <- order(vars, decreasing = TRUE)[1:32000]   # top 32k probes like Capper
+beta_top <- t(beta[top_idx, ])   # transpose → samples x probes
 
-# load series and get meta data
-gse_id <- "GSE90496"
-gse <- getGEO(gse_id, GSEMatrix = TRUE) 
+# -----------------------------
+# 3. Load metadata
+# -----------------------------
+gse_list <- getGEO("GSE90496", GSEMatrix = TRUE)
+gse <- if(is.list(gse_list)) gse_list[[1]] else gse_list
 meta <- pData(gse)
 
 # Extract sample names using geo_accession
