@@ -36,3 +36,10 @@ loadSavedFilteredBetas <- function (gse_id, save_tag = "") {
     betas <- readRDS(file=file.path("results", paste0(save_tag, gse_id, "_filtered_betas.rds")))
     return(betas) 
 }
+
+loadSavedModel <- function (gse_id, save_tag = "") {
+
+    gse_id <- match.arg(gse_id, c(REF_GSE_ID, VAL_GSE_ID)) 
+    rf.model <- readRDS(file=file.path("results", paste0(save_tag, gse_id, "_model.rds")))
+    return(rf.model) 
+}

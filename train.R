@@ -70,6 +70,8 @@ getRandomForestModel <- function (betas, anno) {
 }
 
 do.getFilteredBetasBasedOnImportance <- function(gse_id, save_tag = "") {
+    
+    gse_id <- match.arg(gse_id, c(REF_GSE_ID, VAL_GSE_ID))
 
     betas <- loadSavedBetas(gse_id, save_tag)
     anno <- loadSavedAnno(gse_id, save_tag)
@@ -83,6 +85,8 @@ do.getFilteredBetasBasedOnImportance <- function(gse_id, save_tag = "") {
 }
 
 do.getRandomForestModel <- function(gse_id, save_tag = "") {
+    
+    gse_id <- match.arg(gse_id, c(REF_GSE_ID, VAL_GSE_ID))
 
     betas <- loadSavedFilteredBetas(gse_id, save_tag)
     anno <- loadSavedAnno(gse_id, save_tag)
