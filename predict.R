@@ -20,3 +20,10 @@ anno <- cbind(anno, MCF = mcf, MC_PRED = mc_pred)
 
 mcf_pred <- unlist(ifelse(anno[, "MC_PRED"] %in% names(MCF_LOOKUP), MCF_LOOKUP[anno[, "MC_PRED"]], anno[, "MC_PRED"]))
 anno <- cbind(anno, MCF_PRED = mcf_pred)
+
+sum(anno$MC == anno$MC_PRED) / nrow(anno)
+sum(anno$MCF == anno$MCF_PRED) / nrow(anno)
+
+
+# desc								mc_pred			mcf_pred
+# without batch adjustments			0.8577899		0.928442
