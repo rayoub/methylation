@@ -2,6 +2,7 @@
 library(minfi)
 library(GEOquery)
 library(limma)
+library(dplyr)
 
 source("common.R")
 source("MNPpreprocess.R")
@@ -56,8 +57,11 @@ getBatchEffectCoefs <- function (methy, unmethy, methy.ba, unmethy.ba, material)
     # batch based on material
     batch <- ifelse(material == "FFPE", 2, 1)
 
+    # this can probably be improved upon: 
+    # instead of picking the first column of Frozen or FFPE, try picking the medoid
+
     # extract effects to adjust diagnostic samples
-    s.frozen <- min(which(batch == 1))
+    s.frozen <- min(which(batch == 1)) 
     s.ffpe <- min(which(batch == 2))
     methy.coef <- unmethy.coef <- list()
     methy.coef[["Frozen"]] <- log2(methy.ba[, s.frozen]) - log2(methy[, s.frozen] +1)
@@ -68,6 +72,22 @@ getBatchEffectCoefs <- function (methy, unmethy, methy.ba, unmethy.ba, material)
     return(list(methy.coef = methy.coef, unmethy.coef = unmethy.coef))
 }
 
+applyBatchEffectCoefs <- function (methy, unmethy, material) {
+
+    # use coefs calculated from reference data
+    coefs <- loadSavedCoefs(REF_GSE_ID)
+
+    # batch adjust
+    methy.b <- log2(methy + 1) + matrix(unlist(coefs$methy.coef[match(material,names(coefs$methy.coef))]),ncol=length(material)) 
+    unmethy.b <- log2(unmethy + 1) + matrix(unlist(coefs$unmethy.coef[match(material,names(coefs$unmethy.coef))]),ncol=length(material))
+    methy.b[methy.b < 0] <- 0
+    unmethy.b[unmethy.b < 0] <- 0
+    methy.ba <- 2^methy.b
+    unmethy.ba <- 2^unmethy.b
+
+    return(list(methy.ba = methy.ba, unmethy.ba = unmethy.ba))
+}
+
 preprocessSamples <- function (gse_id, save_tag = "") {
 
     gse_id <- match.arg(gse_id, c(REF_GSE_ID, VAL_GSE_ID))
@@ -75,11 +95,15 @@ preprocessSamples <- function (gse_id, save_tag = "") {
     # annotations
     message("getting sample annotations ... ", Sys.time())
     anno <- getSampleAnnotations(gse_id)
-    material <- anno$`material:ch1`
     saveRDS(anno, file=file.path("results", paste0(save_tag, gse_id,"_anno.rds")))
 
-    # when testing apply the filter below when getting the anno
-    #anno <- anno[grep("ATRT", anno$`methylation class:ch1`),]
+    # get material and normalize
+    material <- anno$`material:ch1`
+    material <- case_when(
+        material == "DNA_FFPE" ~ "FFPE",
+        material == "DNA_KRYO" ~ "Frozen",
+        TRUE ~ material
+    )
 
     # get basenames for idat files
     data_dir = file.path("data", gse_id)
@@ -109,8 +133,8 @@ preprocessSamples <- function (gse_id, save_tag = "") {
     }
     else { # gse_id == VAL_GSE_ID
 
-        # TODO: use coefs to make these batch adjustments
-        ba <- list(methy.ba = methy, unmethy.ba = unmethy)
+        # apply batch effects from saved coefs
+        ba <- applyBatchEffectCoefs(methy, unmethy, material)
     }
 
     # recalculate betas using the Illumina Genome Studio offset
