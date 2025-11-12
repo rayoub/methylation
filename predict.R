@@ -24,6 +24,6 @@ anno <- cbind(anno, MCF_PRED = mcf_pred)
 sum(anno$MC == anno$MC_PRED) / nrow(anno)
 sum(anno$MCF == anno$MCF_PRED) / nrow(anno)
 
-
-# desc								mc_pred			mcf_pred
+# descr								mc_pred			mcf_pred
 # without batch adjustments			0.8577899		0.928442
+# with batch adjustments			0.8804348		0.9347826
