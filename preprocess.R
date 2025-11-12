@@ -77,7 +77,8 @@ applyBatchEffectCoefs <- function (methy, unmethy, material) {
     # use coefs calculated from reference data
     coefs <- loadSavedCoefs(REF_GSE_ID)
 
-    # batch adjust
+    # batch adjust 
+    # WARNING: this code depends on Frozen is the first element in the *.coef list
     methy.b <- log2(methy + 1) + matrix(unlist(coefs$methy.coef[match(material,names(coefs$methy.coef))]),ncol=length(material)) 
     unmethy.b <- log2(unmethy + 1) + matrix(unlist(coefs$unmethy.coef[match(material,names(coefs$unmethy.coef))]),ncol=length(material))
     methy.b[methy.b < 0] <- 0
