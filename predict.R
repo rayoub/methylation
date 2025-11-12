@@ -9,7 +9,7 @@ source("mcf.R")
 rf_model <- loadSavedModel(REF_GSE_ID)
 betas <- loadSavedBetas(VAL_GSE_ID)
 scores <- predict(rf_model, betas, type="prob")
-rownames(p) <- sub("_.*","",rownames(scores))
+rownames(scores) <- sub("_.*","",rownames(scores))
 
 # **** evaluation ****
 
