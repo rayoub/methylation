@@ -29,11 +29,11 @@ BiocManager::install(c(
   # Bioconductor packages
   "minfi",
   "GEOquery",
+  "randomForest",
+  "doParallel",
+  "glmnet",
   "IlluminaHumanMethylation450kmanifest",
   "IlluminaHumanMethylationEPICmanifest",
   "IlluminaHumanMethylation450kanno.ilmn12.hg19",
-  "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
-  "ggplot2",
-  "randomForest",
-  "doParallel"
+  "IlluminaHumanMethylationEPICanno.ilm10b4.hg19"
 ))
