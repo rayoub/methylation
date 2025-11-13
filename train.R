@@ -5,12 +5,12 @@ library(randomForest)
 
 source("common.R")
     
-N_CORES <- 10
-N_TREES <- 10000
-N_TOP_BETAS <- 30000 # top variably methylated probes
-N_TOP_FEATURES <- 10000 # top feature importance
+getFilteredBetasBasedOnImportanceParallel <- function (betas, anno) {
 
-getFilteredBetasBasedOnImportance <- function (betas, anno) {
+    N_CORES <- 8
+    N_TREES <- 10000
+    N_TOP_BETAS <- 100000 # top variably methylated probes
+    N_TOP_FEATURES <- 10000 # top feature importance
 
     y <- as.factor(anno$`methylation class:ch1`)
     betas <- betas[,order(-apply(betas,2,sd))[1:N_TOP_BETAS]]
@@ -52,6 +52,8 @@ getFilteredBetasBasedOnImportance <- function (betas, anno) {
 }
 
 getRandomForestModel <- function (betas, anno) {
+    
+    N_TREES <- 10000
 
     y <- as.factor(anno$`methylation class:ch1`)
 
