@@ -1,9 +1,8 @@
 
-library(doParallel)
-library(foreach)
-library(randomForest)
+library(ranger)
 
 source("common.R")
+options(ranger.num.threads = 8)
     
 getFilteredBetasBasedOnImportanceParallel <- function (betas, anno) {
 
@@ -14,38 +13,18 @@ getFilteredBetasBasedOnImportanceParallel <- function (betas, anno) {
 
     y <- as.factor(anno$`methylation class:ch1`)
     betas <- betas[,order(-apply(betas,2,sd))[1:N_TOP_BETAS]]
-
-    t1 <- Sys.time()
-
-    cl <- makeCluster(N_CORES)
-    registerDoParallel(cl)
-
-    rf.varsel <- foreach(i = 1:N_CORES, .packages="randomForest", .combine=randomForest::combine) %dopar% {
-
-        rf <- randomForest(
-                betas,
-                y=y,
-                ntree=ceiling(N_TREES/N_CORES),
-                sampsize=rep(min(table(y)),length(table(y))),
-                norm.votes=FALSE,
-                importance=TRUE)
-        
-        return(rf)
-    }
-
-    stopCluster(cl)
-
-    t2 <- Sys.time()
-
-    td <- t2 - t1
     
-    print(td)
+    rf.varsel <- ranger(
+            x=betas,
+            y=y,
+            num.trees=N_TREES,
+            num.threads=N_CORES,
+            importance="permutation")
 
     # get permutation variable importance
-    imp.meandecrease <- rf.varsel$importance[,dim(rf.varsel$importance)[2]-1]
+    or <- order(rf.varsel$variable.importance, decreasing=TRUE)
 
     # reduce data matrix
-    or <- order(imp.meandecrease, decreasing=T)
     betas <- betas[,or[1:N_TOP_FEATURES]]
 
     return(betas)
@@ -53,26 +32,25 @@ getFilteredBetasBasedOnImportanceParallel <- function (betas, anno) {
 
 getRandomForestModel <- function (betas, anno) {
     
+    N_CORES <- 8
     N_TREES <- 10000
 
     y <- as.factor(anno$`methylation class:ch1`)
-
-    rf.model <- randomForest(
-                    betas,
-                    y,
-                    ntree=N_TREES,
-                    sampsize=rep(min(table(y)),length(table(y))),
-                    proximity=TRUE,
-                    oob.prox=TRUE,
-                    importance=TRUE,
-                    keep.inbag=TRUE,
-                    do.trace=TRUE)
+    
+    rf.model <- ranger(
+            x=betas,
+            y=y,
+            probability=TRUE,
+            num.trees=N_TREES,
+            num.threads=N_CORES,
+            keep.inbag=TRUE,
+            verbose=TRUE)
 
     return(rf.model)
 }
 
 do.getFilteredBetasBasedOnImportance <- function(gse_id, save_tag = "") {
-    
+
     gse_id <- match.arg(gse_id, c(REF_GSE_ID, VAL_GSE_ID))
 
     betas <- loadSavedBetas(gse_id, save_tag)

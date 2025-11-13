@@ -1,5 +1,5 @@
 
-library(randomForest)
+library(ranger)
 
 source("common.R")
 source("mcf.R")
@@ -9,8 +9,9 @@ rf_model <- loadSavedModel(REF_GSE_ID)
 # **** prediction ****
 
 betas <- loadSavedBetas(VAL_GSE_ID)
-scores <- predict(rf_model, betas, type="prob")
-rownames(scores) <- sub("_.*","",rownames(scores))
+p <- predict(rf_model, data = betas)
+scores <- p$predictions 
+rownames(scores) <- sub("_.*","",rownames(betas))
 
 # **** evaluation ****
 
@@ -32,3 +33,7 @@ sum(anno$MCF == anno$MCF_PRED) / nrow(anno)
 # without batch adjustments			0.8577899		0.928442
 # with batch adjustments			0.8804348		0.9347826
 # + calibration						0.8405797 		0.9211957
+
+# switching to ranger
+# descr
+# with batch adjustments			0.8894928		0.9447464

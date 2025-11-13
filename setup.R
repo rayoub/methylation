@@ -17,6 +17,7 @@ BiocManager::install(c(
   "minfi",
   "GEOquery",
   "randomForest",
+  "ranger"
   "dplyr",
   "doParallel",
   "foreach",
