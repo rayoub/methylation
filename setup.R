@@ -16,6 +16,7 @@ BiocManager::install(version = "3.22")
 BiocManager::install(c(
   "ade4"
   "GEOquery",
+  "ggrepel",
   "ggtext",
   "glmnet",
   "here",
@@ -27,6 +28,7 @@ BiocManager::install(c(
   "sesame",
   "splitstackshape",
   "tidyverse",
+  "uwot",
   "IlluminaHumanMethylation450kmanifest",
   "IlluminaHumanMethylationEPICmanifest",
   "IlluminaHumanMethylationEPICv2manifest",
