@@ -1,5 +1,5 @@
 
-library("shiny")
+library(shiny)
 
 ui <- fluidPage(
 	selectInput("dataset", label = "Dataset", choices = ls("package:datasets")),

@@ -105,35 +105,38 @@ calculate.folds <- function(gse_id) {
 	}
 }
 
-# use the reference data
 gse_id <- REF_GSE_ID
+	
+mset <- loadSavedMset(gse_id)
+anno <- loadSavedAnno(gse_id)
 
-# calculate scores to build calibration model
-calculate.folds(gse_id)
+y <- as.factor(anno$`methylation class:ch1`)
+material <- as.factor(anno$`material:ch1`)
 
-# load the fold definitions - nfolds variable
-load(here("temp", "nfolds.RData"))
+nfolds <- make.nestedfolds(y, FOLDS)
+
+all_scores <- list()
+for (K in 1:FOLDS) {
+
+	# calculate scores for the outer folds
+	fold <- nfolds[[K]][[1]][[1]] 
+	all_scores[[K]] <- calculate.fold(mset, y, material, fold) 
+}
 
 # load all the outer test scores
-s <- list()
 idx <- list()
 for (i in 1:length(nfolds)) {
-	fname <- paste0("CVfold.", i, ".", 0, ".RData")
-	load(file.path("temp", fname)) # this is where the scores variable is coming from
-	s[[i]] <- scores
 	idx[[i]] <- nfolds[[i]][[1]][[1]]$test
 }
-s <- do.call(rbind, s)
 idx <- unlist(idx) # collapse the list of indices used for testing
 
-anno <- loadSavedAnno(gse_id)
 y <- anno$`methylation class:ch1`[idx] # these y's have to match the scores
 
 # fit calibration model and save
 suppressWarnings(
 	calfit <- cv.glmnet(
 		y = y,
-		x = s,
+		x = do.call(rbind, all_scores),
 		family = "multinomial",
 		type.measure = "mse",
 		alpha = 0,
