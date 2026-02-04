@@ -18,6 +18,7 @@ BiocManager::install(c(
   "GEOquery",
   "ggtext",
   "glmnet",
+  "here",
   "lumi",
   "minfi",
   "openxlsx",

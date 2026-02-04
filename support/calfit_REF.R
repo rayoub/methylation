@@ -2,11 +2,14 @@
 library(minfi)
 library(limma)
 library(glmnet)
+library(here)
 
-source("common.R")
-source("preprocess.R")
-source("train.R")
-source("predict.R")
+source(here("R","loading.R"))
+source(here("R","preprocessing.R"))
+source(here("R","prediction.R"))
+source(here("R","training.R"))
+
+FOLDS <- 3
 
 make.folds <- function(y, cv.fold = 3) {
 	n <- length(y)
@@ -76,14 +79,12 @@ calculate.fold <- function(mset, y, material, fold) {
 	rf_model <- getRandomForestModel(betas_train_filtered, y[fold$train])
 
 	# now to calculate the scores
-	scores <- do.predict(rf_model, betas_test)
+	scores <- predictSampleScores(rf_model, betas_test)
 
 	return(scores)
 }
 
 calculate.folds <- function(gse_id) {
-
-	FOLDS <- 3
 
 	mset <- loadSavedMset(gse_id)
 	anno <- loadSavedAnno(gse_id)
@@ -91,10 +92,8 @@ calculate.folds <- function(gse_id) {
 	y <- as.factor(anno$`methylation class:ch1`)
 	material <- as.factor(anno$`material:ch1`)
 
-	dir.create("temp", showWarnings = FALSE)
-
 	nfolds <- make.nestedfolds(y, FOLDS)
-  	save(nfolds,file=file.path("temp","nfolds.RData"))
+  	save(nfolds,file=here("temp","nfolds.RData"))
 
 	for (K in 1:FOLDS) {
 
@@ -102,55 +101,45 @@ calculate.folds <- function(gse_id) {
 		fold <- nfolds[[K]][[1]][[1]] 
 		scores <- calculate.fold(mset, y, material, fold) 
 		fname <- paste("CVfold", K, 0, "RData", sep = ".")
-		save(scores, file = file.path("temp", fname))
-
-# THIS IS NOT UNUSED TO CREATE FINAL CALFIT MODEL
-#		# calculate scores for the inner fold
-#		for (k in 1:FOLDS) {
-#		
-#			fold <- nfolds[[K]][[2]][[k]] 
-#			scores <- calculate.fold(mset, y, material, fold) 
-#			fname <- paste("CVfold", K, k, "RData", sep = ".")
-#			save(scores, file = file.path("temp", fname))
-#		}
+		save(scores, file = here("temp", fname))
 	}
 }
 
-fit.calibration <- function (gse_id) {
+# use the reference data
+gse_id <- REF_GSE_ID
 
-	# calculate scores to build calibration model
-	calculate.folds(gse_id)
+# calculate scores to build calibration model
+calculate.folds(gse_id)
 
-	# load the fold definitions - nfolds variable
-	load(file.path("temp", "nfolds.RData"))
+# load the fold definitions - nfolds variable
+load(here("temp", "nfolds.RData"))
 
-	# load all the outer test scores
-	s <- list()
-	idx <- list()
-	for (i in 1:length(nfolds)) {
-		fname <- paste0("CVfold.", i, ".", 0, ".RData")
-		load(file.path("temp", fname)) # this is where the scores variable is coming from
-		s[[i]] <- scores
-		idx[[i]] <- nfolds[[i]][[1]][[1]]$test
-	}
-	s <- do.call(rbind, s)
-	idx <- unlist(idx) # collapse the list of indices used for testing
+# load all the outer test scores
+s <- list()
+idx <- list()
+for (i in 1:length(nfolds)) {
+	fname <- paste0("CVfold.", i, ".", 0, ".RData")
+	load(file.path("temp", fname)) # this is where the scores variable is coming from
+	s[[i]] <- scores
+	idx[[i]] <- nfolds[[i]][[1]][[1]]$test
+}
+s <- do.call(rbind, s)
+idx <- unlist(idx) # collapse the list of indices used for testing
 
-	anno <- loadSavedAnno(gse_id)
-	y <- anno$`methylation class:ch1`[idx] # these y's have to match the scores
+anno <- loadSavedAnno(gse_id)
+y <- anno$`methylation class:ch1`[idx] # these y's have to match the scores
 
-	# fit calibration model and save
-	suppressWarnings(
-		calfit <- cv.glmnet(
-			y = y,
-			x = s,
-			family = "multinomial",
-			type.measure = "mse",
-			alpha = 0,
-			nlambda = 100,
-			lambda.min.ratio = 10^-6,
-			parallel = TRUE
-		)
+# fit calibration model and save
+suppressWarnings(
+	calfit <- cv.glmnet(
+		y = y,
+		x = s,
+		family = "multinomial",
+		type.measure = "mse",
+		alpha = 0,
+		nlambda = 100,
+		lambda.min.ratio = 10^-6,
+		parallel = TRUE
 	)
-	saveRDS(calfit, file = file.path("results", paste0(gse_id, "_calfit.rds")))
-}
+)
+saveRDS(calfit, file = file.path("results", paste0(gse_id, "_calfit.rds")))

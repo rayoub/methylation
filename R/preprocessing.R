@@ -3,9 +3,11 @@ library(minfi)
 library(GEOquery)
 library(limma)
 library(dplyr)
+library(here)
 
-source("common.R")
-source("MNPpreprocess.R")
+source(here("R","constants.R"))
+source(here("R","loading.R"))
+source(here("R","MNPpreprocess.R"))
 
 getSampleAnnotations <- function (gse_id) {
 
@@ -20,14 +22,14 @@ getSampleAnnotations <- function (gse_id) {
 getFilteredMethylSet <- function (mset) {
 
     # only consider probes present in 450k, epic, and epicv2 bead chips
-    common.probes <- read.table(file.path("probes","common_450k_epic_epicv2.txt"), header=FALSE)
+    common.probes <- read.table(here("probes","common_450k_epic_epicv2.txt"), header=FALSE)
     mset <- mset[na.omit(match(common.probes[[1]],rownames(mset))),]
 
     # CpG probes 
-    amb.filter <- read.table(file.path("probes","amb_3965probes.vh20151030.txt"), header=FALSE)
-    epic.filter <- read.table(file.path("probes","epicV1B2_32260probes.vh20160325.txt"), header=FALSE)
-    snp.filter <- read.table(file.path("probes","snp_7998probes.vh20151030.txt"), header=FALSE)
-    xy.filter <- read.table(file.path("probes","xy_11551probes.vh20151030.txt"), header=FALSE)
+    amb.filter <- read.table(here("probes","amb_3965probes.vh20151030.txt"), header=FALSE)
+    epic.filter <- read.table(here("probes","epicV1B2_32260probes.vh20160325.txt"), header=FALSE)
+    snp.filter <- read.table(here("probes","snp_7998probes.vh20151030.txt"), header=FALSE)
+    xy.filter <- read.table(here("probes","xy_11551probes.vh20151030.txt"), header=FALSE)
     rs.filter <- grep("rs",rownames(mset))
     ch.filter <- grep("ch",rownames(mset))
 
@@ -95,7 +97,7 @@ applyBatchEffectCoefs <- function (methy, unmethy, material, coefs) {
     return(list(methy.ba = methy.ba, unmethy.ba = unmethy.ba))
 }
 
-do.preprocessGEO <- function (gse_id) {
+preprocessGEOSamples <- function (gse_id) {
 
     gse_id <- match.arg(gse_id, c(REF_GSE_ID, VAL_GSE_ID, NM_GSE_ID))
 
@@ -113,8 +115,8 @@ do.preprocessGEO <- function (gse_id) {
     )
 
     # get basenames for idat files
-    data_dir = file.path("data", gse_id)
-    basenames <- unique(file.path(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
+    data_dir = here("data", gse_id)
+    basenames <- unique(here(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
 
     message("reading meth arrays ... ", Sys.time())
 
@@ -130,7 +132,7 @@ do.preprocessGEO <- function (gse_id) {
 
     # apply probe filtering to the MethylSet
     mset <- getFilteredMethylSet(mset)
-    saveRDS(mset, file=file.path("results", paste0(gse_id,"_mset.rds")))
+    saveRDS(mset, file=here("results", paste0(gse_id,"_mset.rds")))
 
     methy <- getMeth(mset)
     unmethy <- getUnmeth(mset)
@@ -144,7 +146,7 @@ do.preprocessGEO <- function (gse_id) {
 
         # save batch effect coefs for future diagnostic samples
         coefs <- getBatchEffectCoefs(methy, unmethy, ba$methy.ba, ba$unmethy.ba, material)
-        saveRDS(coefs, file=file.path("results", paste0(gse_id,"_coefs.rds")))
+        saveRDS(coefs, file=here("results", paste0(gse_id,"_coefs.rds")))
     }
     else { # gse_id == VAL_GSE_ID || NM_GSE_ID
 
@@ -157,21 +159,21 @@ do.preprocessGEO <- function (gse_id) {
     illumina_offset <- 100
     betas <- ba$methy.ba / (ba$methy.ba + ba$unmethy.ba + illumina_offset)
     betas <- as.data.frame(t(betas))
-    saveRDS(betas, file=file.path("results", paste0(gse_id, "_betas.rds")))
+    saveRDS(betas, file=here("results", paste0(gse_id, "_betas.rds")))
 
     message("preprocessing finished ... ", Sys.time())
 }
 
-do.preprocessDIAG <- function (diag_id, material) {
+preprocessDiagnosticSamples <- function (diag_id, material) {
 
     # get basenames for idat files
-    data_dir = file.path("data", "diagnostic", diag_id)
-    basenames <- unique(file.path(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
+    data_dir = here("data", "diagnostic", diag_id)
+    basenames <- unique(here(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
 
     message("reading meth arrays ... ", Sys.time())
 
     # read idat files into an RGSet
-    rgset <- read.metharray(basenames, verbose=TRUE)
+    rgset <- read.metharray(basenames, verbose=TRUE, force=TRUE)
 
     message("preprocessing meth arrays ... ", Sys.time())
 
@@ -197,7 +199,7 @@ do.preprocessDIAG <- function (diag_id, material) {
     illumina_offset <- 100
     betas <- ba$methy.ba / (ba$methy.ba + ba$unmethy.ba + illumina_offset)
     betas <- as.data.frame(t(betas))
-    saveRDS(betas, file=file.path("results", paste0(diag_id, "_betas.rds")))
+    saveRDS(betas, file=here("results", paste0(diag_id, "_betas.rds")))
 
     message("preprocessing finished ... ", Sys.time())
 }

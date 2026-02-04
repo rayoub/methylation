@@ -4,14 +4,15 @@ library(ntile)
 library(splitstackshape)
 library(sesame)
 library(conumee2)
+library(here)
 
-source("preprocess.R")
+source(here("R","constants.R"))
+source(here("R","preprocessing.R"))
 
 num_bins <- 8
 samples_per_bin <- 3
 
-gse_id <- "GSE246337"
-anno <- getSampleAnnotations(gse_id)
+anno <- getSampleAnnotations(CNV_GSE_ID)
 
 m <- anno[anno$`Sex:ch1` == "M",c("geo_accession", "description", "age:ch1", "Sex:ch1")] 
 f <- anno[anno$`Sex:ch1` == "F",c("geo_accession", "description", "age:ch1", "Sex:ch1")] 
@@ -38,8 +39,8 @@ f_files <- paste(f_sample$geo_accession, f_sample$description, sep = "_")
 files <- c(m_files, f_files)
 
 # copy files to ref directory
-src <- "E:/git/methylation/data/GSE246337"
-des <- "E:/git/methylation/data/CNV_REF_EPICv2"
+src <- here("data","GSE246337")
+des <- here("data","CNV_REF_EPICv2")
 for (file in files) {
 
 	file_name <- paste0(file, "_Grn.idat")
@@ -58,4 +59,4 @@ sdfs_c <- openSesame(des, prep = "QCDPB", func = NULL)
 cnv_ref <- CNV.load(do.call(cbind, lapply(sdfs_c, totalIntensities)))
 
 # save ref data
-saveRDS(cnv_ref, file=file.path("results", "CNV_REF_EPICv2.rds"))
+saveRDS(cnv_ref, file=here("results", "CNV_REF_EPICv2.rds"))

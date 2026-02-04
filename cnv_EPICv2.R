@@ -1,8 +1,9 @@
 
 library(conumee2)
 library(sesame)
+library(here)
 
-source("common.R")
+source(here("R", "loading.R"))
 
 diag_id <- "DIAG1"
 

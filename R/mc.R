@@ -1,5 +1,5 @@
 
-MC_DESCR <- c(
+MC <- c(
     "A IDH" = "IDH glioma, subclass astrocytoma",
     "A IDH, HG"	= "IDH glioma, subclass high grade astrocytoma ",
     "ANA PA" = "anaplastic pilocytic astrocytoma",

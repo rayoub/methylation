@@ -1,7 +1,6 @@
 
 library(ranger)
 
-source("common.R")
 options(ranger.num.threads = 8)
     
 getFilteredBetasBasedOnImportance <- function (betas, y) {
@@ -50,32 +49,4 @@ getRandomForestModel <- function (betas, y) {
             verbose=TRUE)
 
     return(rf_model)
-}
-
-do.getFilteredBetasBasedOnImportance <- function() {
-
-    gse_id <- REF_GSE_ID
-
-    betas <- loadSavedBetas(gse_id)
-    anno <- loadSavedAnno(gse_id)
-    
-    y <- as.factor(anno$`methylation class:ch1`)
-    
-    betas <- getFilteredBetasBasedOnImportance(betas, y)
-
-    saveRDS(betas, file=file.path("results", paste0(gse_id,"_filtered_betas.rds")))
-}
-
-do.getRandomForestModel <- function() {
-
-    gse_id <- REF_GSE_ID
-
-    betas <- loadSavedFilteredBetas(gse_id)
-    anno <- loadSavedAnno(gse_id)
-    
-    y <- as.factor(anno$`methylation class:ch1`)
-
-    rf_model <- getRandomForestModel(betas, y)
-
-    saveRDS(rf_model, file=file.path("results", paste0(gse_id,"_model.rds")))
 }

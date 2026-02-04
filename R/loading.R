@@ -1,8 +1,4 @@
 
-REF_GSE_ID <- "GSE90496"
-VAL_GSE_ID <- "GSE109379"
-NM_GSE_ID <- "GSE198855"
-
 loadSavedAnno <- function (id) {
 
     anno <- readRDS(file=file.path("results", paste0(id, "_anno.rds")))
