@@ -104,7 +104,7 @@ preprocessGEOSamples <- function (gse_id) {
     # annotations
     message("getting sample annotations ... ", Sys.time())
     anno <- getSampleAnnotations(gse_id)
-    saveRDS(anno, file=file.path("results", paste0(gse_id,"_anno.rds")))
+    saveRDS(anno, file=here("results", paste0(gse_id,"_anno.rds")))
 
     # get material and normalize
     material <- if ("material:ch1" %in% names(anno)) anno$`material:ch1` else anno$`sample type:ch1`

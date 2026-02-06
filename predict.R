@@ -1,14 +1,12 @@
 
-library(ranger)
 library(openxlsx)
-library(glmnet)
 library(here)
 
-source(here("R","globals.R"))
+source(here("R","constants.R"))
 source(here("R","loading.R"))
 source(here("R","prediction.R"))
 
-id <- "NIH_EPIC"
+id <- "DIAG3"
 betas <- loadSavedBetas(id)
 
 scores <- predictSampleScores(betas)
