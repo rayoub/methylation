@@ -18,7 +18,7 @@ predictSampleScores <- function(betas) {
 	filtered_betas <- betas[match(rf_vars, colnames(betas))]
 	p <- predict(rf_model, data = filtered_betas)
 	scores <- p$predictions
-	rownames(scores) <- sub("_.*", "", rownames(filtered_betas))
+	rownames(scores) <- rownames(filtered_betas)
 
 	# calibrate scores using calfit model
 	calfit <- loadSavedCalfit(REF_GSE_ID)
