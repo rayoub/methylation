@@ -8,7 +8,10 @@ source(here("R","loading.R"))
 source(here("R","mcf.R"))
 source(here("R","mc.R"))
 
-predictSampleScores <- function(betas) {
+predictSampleScores <- function(id) {
+
+	# load betas for sample
+	betas <- loadSavedBetas(id)
 
 	# load rf model from reference data
 	rf_model <- loadSavedModel(REF_GSE_ID)
@@ -70,15 +73,40 @@ evaluateGEOSampleScores <- function (gse_id, scores) {
 
 evaluateDiagnosticSampleScores <- function (scores) {
 
-	samples <- rownames(scores)	
-	mc_pred <- colnames(scores)[max.col(scores)]
-	res <- data.frame(SAMPLE_ID = samples, MC_PRED = mc_pred)
+	scores_df <- as.data.frame(scores, row.names = rownames(scores))
+	scores_t <- tibble::rownames_to_column(scores_df, var = "sample_id")
+	
+	scores_mc <- scores_t |>
+		pivot_longer(
+			cols = !(sample_id),
+			names_to = "mc",
+			values_to = "mc_score"
+		) |>
+		group_by(sample_id) |>
+		slice_max(mc_score) 
 
-	mcf_pred <- unlist(ifelse(res[, "MC_PRED"] %in% names(MCF_LOOKUP), MCF_LOOKUP[res[, "MC_PRED"]], res[, "MC_PRED"]))
-	res <- cbind(res, MCF_PRED = mcf_pred)
+	scores_mcf <- scores_t |>
+		pivot_longer(
+			cols = !(sample_id),
+			names_to = "mc",
+			values_to = "mc_score"
+		) |>
+		mutate(
+			mcf = mcf_lookup(mc),
+			.after = mc
+		) |>
+		group_by(sample_id, mcf) |>
+		summarize(
+			mcf_score = sum(mc_score),
+			.groups = "drop_last"
+		) |>
+		slice_max(order_by = mcf_score)
 
-	mc_descr <- ifelse(res[, "MC_PRED"] %in% names(MC), MC[res[, "MC_PRED"]], NA)
-	res <- cbind(res, MC_DESCR = mc_descr)
+	scores_j <- scores_mc |> 
+		inner_join(scores_mcf, join_by(sample_id)) |>
+		mutate(
+			mc_descr = MC[mc]
+		)
 
-	return (res)
+	return (scores_j)
 }
