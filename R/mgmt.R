@@ -118,7 +118,7 @@ mgmtPlot <- function(diag_id, sample_id, preds) {
       lineheight = 1.2
     )
 
-    ggsave(here("output", diag_id, paste0("MGMT_", sample_id, ".pdf")))
+    ggsave(here("output", diag_id, paste0("MGMT_", sample_id, ".pdf")), height = 2, units = "in", dpi = 300)
 }
 
 mgmtPlotBatch <- function (diag_id) {
@@ -126,10 +126,8 @@ mgmtPlotBatch <- function (diag_id) {
   # output directory
   dir.create(here("output", diag_id), showWarnings = FALSE)
 
-  # read meth arrays
-  data_dir <- here("data", "diagnostic", diag_id)
-  rgset <- read.metharray.exp(data_dir, verbose = TRUE)
-  mset <- preprocessRaw(rgset)
+  # load mset
+  mset <- loadSavedMset(diag_id)
 
   # convert M values
   mvals <- log2((getMeth(mset) + 1) / (getUnmeth(mset) + 1))
@@ -140,6 +138,6 @@ mgmtPlotBatch <- function (diag_id) {
 
   # plot
   for (sample_id in rownames(preds)) {
-    mgmt.plot(diag_id, sample_id, preds)
+    mgmtPlot(diag_id, sample_id, preds)
   }
 }

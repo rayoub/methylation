@@ -185,6 +185,7 @@ preprocessDiagnosticSamples <- function (diag_id, material) {
 
     # apply probe filtering to the MethylSet
     mset <- getFilteredMethylSet(mset)
+    saveRDS(mset, file=here("results", paste0(diag_id,"_mset.rds")))
 
     methy <- getMeth(mset)
     unmethy <- getUnmeth(mset)
