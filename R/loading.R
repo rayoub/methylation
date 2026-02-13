@@ -25,10 +25,10 @@ loadSavedBetas <- function (id) {
     return(betas) 
 }
 
-loadSavedFilteredBetas <- function (id) {
+loadSavedUmapBetas <- function (id) {
 
-    filtered_betas <- readRDS(file=here("results", paste0(id, "_filtered_betas.rds")))
-    return(filtered_betas) 
+    umap_betas <- readRDS(file=here("results", paste0(id, "_umap_betas.rds")))
+    return(umap_betas) 
 }
 
 loadSavedModel <- function (id) {

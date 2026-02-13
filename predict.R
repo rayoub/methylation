@@ -9,7 +9,6 @@ source(here("R","constants.R"))
 source(here("R","loading.R"))
 source(here("R","prediction.R"))
 
-
 id <- "DIAG3"
 scores <- predictSampleScores(id)
 
