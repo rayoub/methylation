@@ -1,14 +1,13 @@
-# ==========================================
-# MGMT Promoter Methylation Predictor
-# ==========================================
 
 # MGMTstp27 is not available on CRAN, download and install manually from source https://github.com/badozor/mgmtstp27
 library(mgmtstp27)
 library(minfi)
 library(dplyr)
 library(ggtext)
+library(here)
 
-mgmt.plot <- function(diag_id, sample_id, preds) {
+mgmtPlot <- function(diag_id, sample_id, preds) {
+
   cutoff <- 0.3582 # STP27 cutoff - This is a hardcoded value biologically
   x_max <- 1.5 # extra space for right-hand annotation
 
@@ -119,30 +118,28 @@ mgmt.plot <- function(diag_id, sample_id, preds) {
       lineheight = 1.2
     )
 
-    ggsave(file.path("output", diag_id, paste0("MGMT_", sample_id, ".pdf")))
+    ggsave(here("output", diag_id, paste0("MGMT_", sample_id, ".pdf")))
 }
 
-# gather input
-diag_id <- "DIAG1"
+mgmtPlotBatch <- function (diag_id) {
 
-# output directory
-dir.create(file.path("output", diag_id), showWarnings = FALSE)
+  # output directory
+  dir.create(here("output", diag_id), showWarnings = FALSE)
 
-# read meth arrays
-data_dir <- file.path("data", "diagnostic", diag_id)
-rgset <- read.metharray.exp(data_dir, verbose = TRUE)
-mset <- preprocessRaw(rgset)
+  # read meth arrays
+  data_dir <- here("data", "diagnostic", diag_id)
+  rgset <- read.metharray.exp(data_dir, verbose = TRUE)
+  mset <- preprocessRaw(rgset)
 
-# convert M values
-mvals <- log2((getMeth(mset) + 1) / (getUnmeth(mset) + 1))
-mvals <- as.data.frame(t(mvals))
+  # convert M values
+  mvals <- log2((getMeth(mset) + 1) / (getUnmeth(mset) + 1))
+  mvals <- as.data.frame(t(mvals))
 
-# predict 
-preds <- MGMTpredict(mvals)
+  # predict 
+  preds <- MGMTpredict(mvals)
 
-# plot
-for (sample_id in rownames(preds)) {
-  mgmt.plot(diag_id, sample_id, preds)
+  # plot
+  for (sample_id in rownames(preds)) {
+    mgmt.plot(diag_id, sample_id, preds)
+  }
 }
-
-
