@@ -1,9 +1,11 @@
 
-library(minfi)
-library(GEOquery)
-library(limma)
-library(dplyr)
-library(here)
+suppressWarnings(suppressPackageStartupMessages({
+    library(minfi)
+    library(GEOquery)
+    library(limma)
+    library(dplyr)
+    library(here)
+}))
 
 source(here("R","constants.R"))
 source(here("R","loading.R"))
@@ -167,7 +169,7 @@ preprocessGEOSamples <- function (gse_id) {
 preprocessDiagnosticSamples <- function (diag_id, material) {
 
     # get basenames for idat files
-    data_dir = here("data", "diagnostic", diag_id)
+    data_dir = here("data", diag_id)
     basenames <- unique(here(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
 
     message("reading meth arrays ... ", Sys.time())

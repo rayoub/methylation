@@ -1,7 +1,9 @@
 
-library(ranger)
-library(glmnet)
-library(here)
+suppressWarnings(suppressPackageStartupMessages({
+	library(ranger)
+	library(glmnet)
+	library(here)
+}))
 
 source(here("R","constants.R"))
 source(here("R","loading.R"))

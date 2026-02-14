@@ -1,5 +1,7 @@
 
-library(ranger)
+suppressWarnings(suppressPackageStartupMessages({
+    library(ranger)
+}))
 
 options(ranger.num.threads = 8)
     

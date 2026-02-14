@@ -1,5 +1,7 @@
 
-library(here)
+suppressWarnings(suppressPackageStartupMessages({
+    library(here)
+}))
 
 loadSavedAnno <- function (id) {
 

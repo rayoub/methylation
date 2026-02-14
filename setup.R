@@ -2,8 +2,6 @@
 
 # IMPORTANT NOTE: you may need to run this setup script twice.
 
-# IMPORTANT NOTE: install rtools for Windows before running this script.
-
 # ensure BiocManager is installed
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager", repos = "http://cran.us.r-project.org")
