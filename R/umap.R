@@ -42,6 +42,15 @@ umapPlotBatch <- function(diag_id) {
   colnames(umap_df) <- c("UMAP1", "UMAP2")
   rownames(umap_df) <- labels$Sample
   umap_df$Class <- labels$Class
+
+  # calculate min and max values
+  x_min <- min(umap_df$UMAP1)
+  x_max <- max(umap_df$UMAP1)
+  y_min <- min(umap_df$UMAP2)
+  y_max <- max(umap_df$UMAP2)
+
+  x_cut = x_min + 0.75 * (x_max - x_min)
+  y_cut = y_min + 0.75 * (y_max - y_min)
     
   # calculate ref data umap centroids 
   centroids <- umap_df |>
@@ -65,6 +74,12 @@ umapPlotBatch <- function(diag_id) {
     colnames(umap_sample) <- c("UMAP1", "UMAP2")
     umap_sample$Class <- sample_id
 
+    # directions
+    x <- umap_sample$UMAP1
+    y <- umap_sample$UMAP2
+    x_sign <- if_else(x < x_cut, 1, -1)
+    y_sign <- if_else(y < y_cut, 1, -1)
+
     # plot
     ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = Class)) +
       geom_point(
@@ -82,7 +97,7 @@ umapPlotBatch <- function(diag_id) {
       ) +
       geom_label(
         data = umap_sample,
-        aes(x = UMAP1 + 3, y = UMAP2 + 3, label = Class),
+        aes(x = UMAP1 + (x_sign * 3), y = UMAP2 + (y_sign * 3), label = Class),
         size = 4,
         fontface = "bold",
         color = "black",
@@ -90,7 +105,7 @@ umapPlotBatch <- function(diag_id) {
       ) +
       geom_segment(
         data = umap_sample,
-        aes(x = UMAP1, y = UMAP2, xend = UMAP1 + 2.5, yend = UMAP2 + 2.5),
+        aes(x = UMAP1, y = UMAP2, xend = UMAP1 + (x_sign * 2.5), yend = UMAP2 + (y_sign * 2.5)),
         linewidth = 0.5,
         color = "black",
         arrow = arrow(
