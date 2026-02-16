@@ -12,10 +12,6 @@ source(here("R", "loading.R"))
 
 umapPlotBatch <- function(diag_id) {
 
-  # set seed
-  seed <- 180314
-  set.seed(seed, kind = "L'Ecuyer-CMRG")
-
   # output directory
   output_dir = here("output", diag_id, "umap")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -65,6 +61,10 @@ umapPlotBatch <- function(diag_id) {
 
   # iterate samples
   for (sample_id in rownames(betas)) {
+  
+    # set seed
+    seed <- 180314
+    set.seed(seed, kind = "L'Ecuyer-CMRG")
 
     sample <- betas[sample_id, colnames(umap_betas)]
 
@@ -105,7 +105,7 @@ umapPlotBatch <- function(diag_id) {
       ) +
       geom_segment(
         data = umap_sample,
-        aes(x = UMAP1, y = UMAP2, xend = UMAP1 + (x_sign * 2.5), yend = UMAP2 + (y_sign * 2.5)),
+        aes(x = UMAP1, y = UMAP2, xend = UMAP1 + (x_sign * 2.4), yend = UMAP2 + (y_sign * 2.4)),
         linewidth = 0.5,
         color = "black",
         arrow = arrow(
