@@ -2,6 +2,7 @@
 suppressWarnings(suppressPackageStartupMessages({
 	library(ranger)
 	library(glmnet)
+	library(tidyr)
 	library(here)
 }))
 

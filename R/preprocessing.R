@@ -166,7 +166,7 @@ preprocessGEOSamples <- function (gse_id) {
     message("preprocessing finished ... ", Sys.time())
 }
 
-preprocessDiagnosticSamples <- function (diag_id, material) {
+preprocessDiagnosticSamples <- function (diag_id, material = "FFPE") {
 
     # get basenames for idat files
     data_dir = here("data", diag_id)
