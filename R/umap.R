@@ -7,13 +7,13 @@ suppressWarnings(suppressPackageStartupMessages({
   library(here)
 }))
 
-source(here("R", "constants.R"))
-source(here("R", "loading.R"))
+source(here::here("R", "constants.R"))
+source(here::here("R", "loading.R"))
 
 umapPlotBatch <- function(diag_id) {
 
   # output directory
-  output_dir = here("output", diag_id, "umap")
+  output_dir = here::here("output", diag_id, "umap")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
   # load ref data

@@ -5,11 +5,11 @@ suppressWarnings(suppressPackageStartupMessages({
 	library(here)
 }))
 
-source(here("R", "loading.R"))
+source(here::here("R", "loading.R"))
 
 cnvPlotBatch <- function(diag_id) {
-	output_dir = here("output", diag_id, "cnv")
-	sample_dir <- here("data", diag_id)
+	output_dir = here::here("output", diag_id, "cnv")
+	sample_dir <- here::here("data", diag_id)
 
 	dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 

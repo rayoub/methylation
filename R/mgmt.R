@@ -8,11 +8,11 @@ suppressWarnings(suppressPackageStartupMessages({
   library(here)
 }))
 
-source(here("R","loading.R"))
+source(here::here("R","loading.R"))
 
 mgmtPlot <- function(diag_id, sample_id, preds) {
   # output directory
-  output_dir = here("output", diag_id, "mgmt")
+  output_dir = here::here("output", diag_id, "mgmt")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
   cutoff <- 0.3582 # STP27 cutoff - This is a hardcoded value biologically

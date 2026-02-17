@@ -6,10 +6,10 @@ suppressWarnings(suppressPackageStartupMessages({
 	library(here)
 }))
 
-source(here("R","constants.R"))
-source(here("R","loading.R"))
-source(here("R","mcf.R"))
-source(here("R","mc.R"))
+source(here::here("R","constants.R"))
+source(here::here("R","loading.R"))
+source(here::here("R","mcf.R"))
+source(here::here("R","mc.R"))
 
 predictSampleScores <- function(id) {
 
