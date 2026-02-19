@@ -1,0 +1,258 @@
+---
+output: word_document
+---
+
+# Preprocessing
+
+All samples, whether from GEO or a batch of diagnostic samples from our own lab, have to be *preprocessed* as the first step.
+Shown below is the code for preprocessing our own diagnostic samples. 
+The only difference between the code below and how we process GEO samples is that we used the 
+IDAT files from GEO series GSE90496 to derivee batch effect coefficients for each material, FFPE or Frozen.
+For our own samples, the batch effects are then applied to adjust for material specific noise. 
+The end result of this step is a Mathyl Set and corresponding Beta values for each sample in the batch. 
+
+```{r cache=TRUE, eval=FALSE}
+
+preprocessDiagnosticSamples <- function (diag_id, material = "FFPE") {
+
+    # get basenames for idat files
+    data_dir = here::here("data", diag_id)
+    basenames <- unique(here::here(data_dir, 
+        gsub("_Grn.*", "", 
+            gsub("_Red.*", "", 
+                list.files(path = data_dir, pattern = "*.idat")
+            )
+        )
+    ))
+
+    # read idat files into an RGSet
+    rgset <- read.metharray(basenames, verbose=TRUE, force=TRUE)
+
+    # preprocess RGSet and convert to a MethylSet
+    mset <- MNPpreprocessIllumina(rgset)
+    rownames(mset) <- sub("_.*", "", rownames(mset))
+
+    # apply probe filtering to the MethylSet and save
+    mset <- getFilteredMethylSet(mset)
+    saveRDS(mset, file=here::here("results", paste0(diag_id,"_mset.rds")))
+
+    methy <- getMeth(mset)
+    unmethy <- getUnmeth(mset)
+
+    # apply batch effects from saved coefs
+    coefs <- loadSavedCoefs(REF_GSE_ID)
+    ba <- applyBatchEffectCoefs(methy, unmethy, material, coefs)
+
+    # recalculate betas using the Illumina Genome Studio offset and save
+    illumina_offset <- 100
+    betas <- ba$methy.ba / (ba$methy.ba + ba$unmethy.ba + illumina_offset)
+    betas <- as.data.frame(t(betas))
+    saveRDS(betas, file=here::here("results", paste0(diag_id, "_betas.rds")))
+}
+
+```
+
+From above, the getFilteredMethylSet() function is responsible for removing probes that are not common to 
+all of 450K, EPIC, and EPICv2 arrays. 
+These common probes are formed from the intersection of probes from the annotation object for each version. 
+By doing this, we are able to classify tumor samples from EPICv2 arrays using a random forest model derived
+from samples from 450K arrays. While this is flexible, it does mean that the extra probes added to the EPIC 
+arrays are not used. 
+
+```{r cache=TRUE, eval=FALSE}
+
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+library(IlluminaHumanMethylationEPICv2anno.20a1.hg38)
+library(here)
+
+# get the probes from the annotation objects
+anno_450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+anno_epic <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+anno_epicv2 <- getAnnotation(IlluminaHumanMethylationEPICv2anno.20a1.hg38)
+probes_450k <- rownames(anno_450k)
+probes_epic <- rownames(anno_epic)
+probes_epicv2 <- rownames(anno_epicv2)
+
+probes_epicv2 <- sub("_.*", "", probes_epicv2)
+
+# intersect all probes
+valid_probes1 <- intersect(probes_450k, probes_epic)
+valid_probes2 <- intersect(valid_probes1, probes_epicv2)
+
+writeLines(valid_probes2, con=here("probes", "common_450k_epic_epicv2.txt"))
+```
+
+# Training 
+
+This section only applies to the GEO series GSE90496 samples, since they are used to derive the random forest for model.
+The main line code for this is shown below. We first load the Betas for GSE90496, filter the top 100K most variably
+methylated probes, run the random forest algorithm in *Importance* mode, and finally filter the top 30K
+most important probes. These filtered probes are then used to train the random forest model used for classification. 
+The end result of training is a saved random forest model for classication of CNS tumors. 
+
+```{r cache=TRUE, eval=FALSE}
+
+library(here)
+
+source(here("R","loading.R"))
+source(here("R","training.R"))
+    
+betas <- loadSavedBetas("GSE90496")
+anno <- loadSavedAnno("GSE90496")
+
+y <- as.factor(anno$`methylation class:ch1`)
+
+betas <- getFilteredBetasBasedOnImportance(betas, y)
+
+rf_model <- getRandomForestModel(betas, y)
+
+saveRDS(rf_model, file=file.path("results", paste0(REF_GSE_ID,"_model.rds")))
+```
+
+To implement the random forest algorithm, we use the *ranger* package. Below, is where we filter out
+probes for training the random forest model based on variance and importance.  
+
+```{r cache=TRUE, eval=FALSE}
+
+getFilteredBetasBasedOnImportance <- function (betas, y) {
+
+    N_CORES <- 8
+    N_TREES <- 10000
+    N_TOP_BETAS <- 100000 # top variably methylated probes
+    N_TOP_FEATURES <- 30000 # top feature importance
+    
+    seed <- 180314
+    set.seed(seed,kind ="L'Ecuyer-CMRG")
+
+    # first filter for the most varaibly methylated probes
+    betas <- betas[,order(-apply(betas,2,sd))[1:N_TOP_BETAS]]
+    
+    rf_varsel <- ranger(
+            x=betas,
+            y=y,
+            num.trees=N_TREES,
+            num.threads=N_CORES,
+            importance="permutation")
+
+    # get permutation variable importance
+    or <- order(rf_varsel$variable.importance, decreasing=TRUE)
+
+    # finally, filter for the most import variables determined by ranger 
+    betas <- betas[,or[1:N_TOP_FEATURES]]
+
+    return(betas)
+}
+
+```
+
+Finally, here is the code for training the final random forest model. 
+
+```{r cache=TRUE, eval=FALSE}
+
+getRandomForestModel <- function (betas, y) {
+    
+    N_CORES <- 8
+    N_TREES <- 10000
+    
+    seed <- 180314
+    set.seed(seed,kind ="L'Ecuyer-CMRG")
+    
+    rf_model <- ranger(
+            x=betas,
+            y=y,
+            probability=TRUE,
+            num.trees=N_TREES,
+            num.threads=N_CORES,
+            keep.inbag=TRUE,
+            verbose=TRUE)
+
+    return(rf_model)
+}
+
+```
+
+# Classification
+
+Once we have the trained random forest model from above along with preprocessed diagnostic samples, it's time to perform the classification of CNS tumors based on methlaytion profiles. 
+Below, given an diagnostic samples batch id or a GEO series id, samples classes are predicted. 
+Once the raw scores are obtained from the model, we perform score callibration using a multinomial logistic regression. 
+
+```{r cache=TRUE, eval=FALSE}
+
+predictSampleScores <- function(id) {
+
+	# load betas for sample
+	betas <- loadSavedBetas(id)
+
+	# load rf model from reference data
+	rf_model <- loadSavedModel(REF_GSE_ID)
+
+	# predict raw scores from rf model
+	rf_vars <- rf_model$forest$independent.variable.names
+	filtered_betas <- betas[match(rf_vars, colnames(betas))]
+	p <- predict(rf_model, data = filtered_betas)
+	scores <- p$predictions
+	rownames(scores) <- rownames(filtered_betas)
+
+	# calibrate scores using calfit model
+	calfit <- loadSavedCalfit(REF_GSE_ID)
+	scores <- predict(
+			calfit$glmnet.fit,
+			newx = scores,
+			type = "response",
+			s = calfit$lambda.1se
+		)[,, 1] # use lambda estimated by 10fold CVlambda
+
+	return(scores)
+}
+
+```
+
+Once the scores are obtained as above, they have to be reshaped using Tidy data techniques for the final Excel output. 
+
+```{r cache=TRUE, eval=FALSE}
+
+evaluateDiagnosticSampleScores <- function (scores) {
+
+	scores_df <- as.data.frame(scores, row.names = rownames(scores))
+	scores_t <- tibble::rownames_to_column(scores_df, var = "sample_id")
+	
+	scores_mc <- scores_t |>
+		pivot_longer(
+			cols = !(sample_id),
+			names_to = "mc",
+			values_to = "mc_score"
+		) |>
+		group_by(sample_id) |>
+		slice_max(mc_score) 
+
+	scores_mcf <- scores_t |>
+		pivot_longer(
+			cols = !(sample_id),
+			names_to = "mc",
+			values_to = "mc_score"
+		) |>
+		mutate(
+			mcf = mcf_lookup(mc),
+			.after = mc
+		) |>
+		group_by(sample_id, mcf) |>
+		summarize(
+			mcf_score = sum(mc_score),
+			.groups = "drop_last"
+		) |>
+		slice_max(order_by = mcf_score)
+
+	scores_j <- scores_mc |> 
+		inner_join(scores_mcf, join_by(sample_id)) |>
+		mutate(
+			mc_descr = MC[mc]
+		)
+
+	return (scores_j)
+}
+
+```
+
+
