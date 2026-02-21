@@ -1,8 +1,8 @@
 
 library(here)
 
-source(here("R", "constants.R"))
-source(here("R", "loading.R"))
+source(here::here("R", "constants.R"))
+source(here::here("R", "loading.R"))
 
 N_TOP_BETAS <- 32000 # top variably methylated probes
 
@@ -10,6 +10,6 @@ N_TOP_BETAS <- 32000 # top variably methylated probes
 betas <- loadSavedBetas(REF_GSE_ID)
 filtered_betas <- betas[, order(-apply(betas, 2, sd))[1:N_TOP_BETAS]]
 
-saveRDS(filtered_betas, file=here("results", paste0(REF_GSE_ID, "_umap_betas.rds")))
+saveRDS(filtered_betas, file=here::here("results", paste0(REF_GSE_ID, "_umap_betas.rds")))
 
 

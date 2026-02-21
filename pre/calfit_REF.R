@@ -4,10 +4,10 @@ library(limma)
 library(glmnet)
 library(here)
 
-source(here("R","loading.R"))
-source(here("R","preprocessing.R"))
-source(here("R","prediction.R"))
-source(here("R","training.R"))
+source(here::here("R","loading.R"))
+source(here::here("R","preprocessing.R"))
+source(here::here("R","prediction.R"))
+source(here::here("R","training.R"))
 
 FOLDS <- 3
 
@@ -93,7 +93,7 @@ calculate.folds <- function(gse_id) {
 	material <- as.factor(anno$`material:ch1`)
 
 	nfolds <- make.nestedfolds(y, FOLDS)
-  	save(nfolds,file=here("temp","nfolds.RData"))
+  	save(nfolds,file=here::here("temp","nfolds.RData"))
 
 	for (K in 1:FOLDS) {
 
@@ -101,7 +101,7 @@ calculate.folds <- function(gse_id) {
 		fold <- nfolds[[K]][[1]][[1]] 
 		scores <- calculate.fold(mset, y, material, fold) 
 		fname <- paste("CVfold", K, 0, "RData", sep = ".")
-		save(scores, file = here("temp", fname))
+		save(scores, file = here::here("temp", fname))
 	}
 }
 
@@ -145,4 +145,4 @@ suppressWarnings(
 		parallel = TRUE
 	)
 )
-saveRDS(calfit, file=here("results", paste0(gse_id, "_calfit.rds")))
+saveRDS(calfit, file=here::here("results", paste0(gse_id, "_calfit.rds")))

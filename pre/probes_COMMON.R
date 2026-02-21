@@ -16,6 +16,6 @@ probes_epicv2 <- sub("_.*", "", probes_epicv2)
 valid_probes1 <- intersect(probes_450k, probes_epic)
 valid_probes2 <- intersect(valid_probes1, probes_epicv2)
 
-writeLines(valid_probes2, con=here("probes", "common_450k_epic_epicv2.txt"))
+writeLines(valid_probes2, con=here::here("probes", "common_450k_epic_epicv2.txt"))
 
 
