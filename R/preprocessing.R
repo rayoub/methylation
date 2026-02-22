@@ -117,7 +117,7 @@ preprocessGEOSamples <- function (gse_id) {
     )
 
     # get basenames for idat files
-    data_dir = here::here("data", gse_id)
+    data_dir = here::here("data", "geo", gse_id)
     basenames <- unique(here::here(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
 
     message("reading meth arrays ... ", Sys.time())
@@ -166,10 +166,10 @@ preprocessGEOSamples <- function (gse_id) {
     message("preprocessing finished ... ", Sys.time())
 }
 
-preprocessDiagnosticSamples <- function (batch_id, material = "FFPE") {
+preprocessLabSamples <- function (batch_id, material = "FFPE") {
 
     # get basenames for idat files
-    data_dir = here::here("data", batch_id)
+    data_dir = here::here("data", "lab", batch_id)
     basenames <- unique(here::here(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
 
     message("reading meth arrays ... ", Sys.time())

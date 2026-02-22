@@ -16,13 +16,12 @@ processLabSamples <- function (batch_id) {
 	output_dir = here::here("output", batch_id)
 	dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-	message("preprocessing samples ... ", Sys.time())
-	preprocessLabSamples(batch_id, "FFPE")
+	#message("preprocessing samples ... ", Sys.time())
+	#preprocessLabSamples(batch_id, "FFPE")
 
-	message("performing classification ... ", Sys.time())
-	scores <- predictLabSampleScores(batch_id)
-	res <- evaluateLabSampleScores(scores)
-	write.xlsx(res, file=here::here("output", batch_id, paste0(batch_id, ".xlsx")), rowNames=TRUE)
+	#message("performing classification ... ", Sys.time())
+	#scores <- predictLabSampleScores(batch_id)
+	#saveLabData(batch_id, "scores", scores)
 
 	message("creating MGMT plots ... ", Sys.time())	
 	mgmtPlotBatch(batch_id)
