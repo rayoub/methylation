@@ -39,8 +39,8 @@ f_files <- paste(f_sample$geo_accession, f_sample$description, sep = "_")
 files <- c(m_files, f_files)
 
 # copy files to ref directory
-src <- here("data","GSE246337")
-des <- here("data","CNV_REF_EPICv2")
+src <- here::here("data","geo","GSE246337")
+des <- here::here("data","other","CNV_REF_EPICv2")
 for (file in files) {
 
 	file_name <- paste0(file, "_Grn.idat")
@@ -59,4 +59,4 @@ sdfs_c <- openSesame(des, prep = "QCDPB", func = NULL)
 cnv_ref <- CNV.load(do.call(cbind, lapply(sdfs_c, totalIntensities)))
 
 # save ref data
-saveRDS(cnv_ref, file=here("results", "CNV_REF_EPICv2.rds"))
+saveRDS(cnv_ref, file=here("results", "other", "CNV_REF_EPICv2.rds"))

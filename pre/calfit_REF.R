@@ -4,7 +4,7 @@ library(limma)
 library(glmnet)
 library(here)
 
-source(here::here("R","loading.R"))
+source(here::here("R","files.R"))
 source(here::here("R","preprocessing.R"))
 source(here::here("R","prediction.R"))
 source(here::here("R","training.R"))
@@ -86,8 +86,8 @@ calculate.fold <- function(mset, y, material, fold) {
 
 calculate.folds <- function(gse_id) {
 
-	mset <- loadSavedMset(gse_id)
-	anno <- loadSavedAnno(gse_id)
+	mset <- loadGeoData(gse_id, "mset")
+	anno <- loadGeoData(gse_id, "anno")
 
 	y <- as.factor(anno$`methylation class:ch1`)
 	material <- as.factor(anno$`material:ch1`)
@@ -107,8 +107,8 @@ calculate.folds <- function(gse_id) {
 
 gse_id <- REF_GSE_ID
 	
-mset <- loadSavedMset(gse_id)
-anno <- loadSavedAnno(gse_id)
+mset <- loadGeoData(gse_id, "mset")
+anno <- loadGeoData(gse_id, "anno")
 
 y <- as.factor(anno$`methylation class:ch1`)
 material <- as.factor(anno$`material:ch1`)
@@ -145,4 +145,4 @@ suppressWarnings(
 		parallel = TRUE
 	)
 )
-saveRDS(calfit, file=here::here("results", paste0(gse_id, "_calfit.rds")))
+saveGeoData(gse_id, "calfit", calfit)

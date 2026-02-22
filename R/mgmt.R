@@ -1,4 +1,3 @@
-
 # MGMTstp27 is not available on CRAN, download and install manually from source https://github.com/badozor/mgmtstp27
 suppressWarnings(suppressPackageStartupMessages({
   library(mgmtstp27)
@@ -8,13 +7,9 @@ suppressWarnings(suppressPackageStartupMessages({
   library(here)
 }))
 
-source(here::here("R","loading.R"))
+source(here::here("R", "files.R"))
 
-mgmtPlot <- function(diag_id, sample_id, preds) {
-  # output directory
-  output_dir = here::here("output", diag_id, "mgmt")
-  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-
+mgmtPlot <- function(batch_id, sample_id, preds) {
   cutoff <- 0.3582 # STP27 cutoff - This is a hardcoded value biologically
   x_max <- 1.5 # extra space for right-hand annotation
 
@@ -124,18 +119,15 @@ mgmtPlot <- function(diag_id, sample_id, preds) {
       family = "sans",
       lineheight = 1.2
     )
-
-  ggsave(
-    file.path(output_dir, paste0("MGMT_", sample_id, ".pdf")),
-    height = 2,
-    units = "in",
-    dpi = 300
-  )
 }
 
-mgmtPlotBatch <- function(diag_id) {
+mgmtPlotBatch <- function(batch_id) {
+  # output directory
+  output_dir = here::here("output", batch_id, "mgmt")
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
   # load mset
-  mset <- loadSavedMset(diag_id)
+  mset <- loadLabData(batch_id, "mset")
 
   # convert M values
   mvals <- log2((getMeth(mset) + 1) / (getUnmeth(mset) + 1))
@@ -146,6 +138,13 @@ mgmtPlotBatch <- function(diag_id) {
 
   # plot
   for (sample_id in rownames(preds)) {
-    mgmtPlot(diag_id, sample_id, preds)
+    p <- mgmtPlot(batch_id, sample_id, preds)
+    ggsave(
+      file.path(output_dir, paste0("mgmt_", sample_id, ".pdf")),
+      plot = p,
+      height = 2,
+      units = "in",
+      dpi = 300
+    )
   }
 }

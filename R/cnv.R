@@ -5,16 +5,14 @@ suppressWarnings(suppressPackageStartupMessages({
 	library(here)
 }))
 
-source(here::here("R", "loading.R"))
-
-cnvPlotBatch <- function(diag_id) {
-	output_dir = here::here("output", diag_id, "cnv")
-	sample_dir <- here::here("data", diag_id)
+cnvPlotBatch <- function(batch_id) {
+	output_dir = here::here("output", batch_id, "cnv")
+	sample_dir <- here::here("data", "lab", batch_id)
 
 	dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
-	cnv_ref <- loadSavedCnvRef()
-	cnv_anno <- loadSavedCnvAnno()
+    cnv_ref <- readRDS(file=here::here("results", "other", "CNV_REF_EPICv2.rds"))
+    cnv_anno <- readRDS(file=here::here("results", "other", "CNV_ANNO_EPICv2.rds"))
 
 	message("open sesame ... ", Sys.time())
 	cnv_query <- openSesame(sample_dir, prep = "QCDPB", func = NULL)
@@ -29,7 +27,7 @@ cnvPlotBatch <- function(diag_id) {
 		x <- CNV.segment(x)
 
 		pdf(
-			file.path(output_dir, paste0(sample_id, ".pdf")),
+			file.path(output_dir, paste0("cnv_", sample_id, ".pdf")),
 			width = 12,
 			height = 6
 		)

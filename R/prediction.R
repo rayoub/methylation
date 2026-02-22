@@ -7,17 +7,14 @@ suppressWarnings(suppressPackageStartupMessages({
 }))
 
 source(here::here("R","constants.R"))
-source(here::here("R","loading.R"))
+source(here::here("R","files.R"))
 source(here::here("R","mcf.R"))
 source(here::here("R","mc.R"))
 
-predictSampleScores <- function(id) {
-
-	# load betas for sample
-	betas <- loadSavedBetas(id)
+predictSampleScores <- function(betas) {
 
 	# load rf model from reference data
-	rf_model <- loadSavedModel(REF_GSE_ID)
+	rf_model <- loadGeoData(REF_GSE_ID, "model")
 
 	# predict raw scores from rf model
 	rf_vars <- rf_model$forest$independent.variable.names
@@ -27,7 +24,7 @@ predictSampleScores <- function(id) {
 	rownames(scores) <- rownames(filtered_betas)
 
 	# calibrate scores using calfit model
-	calfit <- loadSavedCalfit(REF_GSE_ID)
+	calfit <- loadGeoData(REF_GSE_ID, "calfit")
 	scores <- predict(
 			calfit$glmnet.fit,
 			newx = scores,
@@ -38,9 +35,21 @@ predictSampleScores <- function(id) {
 	return(scores)
 }
 
-evaluateGEOSampleScores <- function (gse_id, scores) {
+predictGeoSampleScores <- function (gse_id) {
+	
+	betas <- loadGeoData(gse_id, "betas")
+	predictSampleScores(betas)
+}
 
-	anno <- loadSavedAnno(gse_id)
+predictLabSampleScores <- function (batch_id) {
+	
+	betas <- loadLabData(batch_id, "betas")
+	predictSampleScores(betas)
+}
+
+evaluateGEOSampleScores <- function (scores, gse_id) {
+
+	anno <- loadGeoData(gse_id, "anno")
 	if ("methylation class:ch1" %in% names(anno)) {
 
 		res <- data.frame(MC = anno[,"methylation class:ch1"])
@@ -74,7 +83,7 @@ evaluateGEOSampleScores <- function (gse_id, scores) {
 	return (res)
 }
 
-evaluateDiagnosticSampleScores <- function (scores) {
+evaluateLabSampleScores <- function (scores) {
 
 	scores_df <- as.data.frame(scores, row.names = rownames(scores))
 	scores_t <- tibble::rownames_to_column(scores_df, var = "sample_id")

@@ -8,7 +8,7 @@ suppressWarnings(suppressPackageStartupMessages({
 }))
 
 source(here::here("R","constants.R"))
-source(here::here("R","loading.R"))
+source(here::here("R","files.R"))
 source(here::here("R","MNPpreprocess.R"))
 
 getSampleAnnotations <- function (gse_id) {
@@ -106,7 +106,7 @@ preprocessGEOSamples <- function (gse_id) {
     # annotations
     message("getting sample annotations ... ", Sys.time())
     anno <- getSampleAnnotations(gse_id)
-    saveRDS(anno, file=here::here("results", paste0(gse_id,"_anno.rds")))
+    saveGeoData(gse_id, "anno", anno)
 
     # get material and normalize
     material <- if ("material:ch1" %in% names(anno)) anno$`material:ch1` else anno$`sample type:ch1`
@@ -134,7 +134,7 @@ preprocessGEOSamples <- function (gse_id) {
 
     # apply probe filtering to the MethylSet
     mset <- getFilteredMethylSet(mset)
-    saveRDS(mset, file=here::here("results", paste0(gse_id,"_mset.rds")))
+    saveGeoData(gse_id, "mset", mset)
 
     methy <- getMeth(mset)
     unmethy <- getUnmeth(mset)
@@ -148,12 +148,12 @@ preprocessGEOSamples <- function (gse_id) {
 
         # save batch effect coefs for future diagnostic samples
         coefs <- getBatchEffectCoefs(methy, unmethy, ba$methy.ba, ba$unmethy.ba, material)
-        saveRDS(coefs, file=here::here("results", paste0(gse_id,"_coefs.rds")))
+        saveGeoData(gse_id, "coefs", coefs)
     }
     else { # gse_id == VAL_GSE_ID || NM_GSE_ID
 
         # apply batch effects from saved coefs
-        coefs <- loadSavedCoefs(REF_GSE_ID)
+        coefs <- loadGeoData(REF_GSE_ID, "coefs")
         ba <- applyBatchEffectCoefs(methy, unmethy, material, coefs)
     }
 
@@ -161,15 +161,15 @@ preprocessGEOSamples <- function (gse_id) {
     illumina_offset <- 100
     betas <- ba$methy.ba / (ba$methy.ba + ba$unmethy.ba + illumina_offset)
     betas <- as.data.frame(t(betas))
-    saveRDS(betas, file=here::here("results", paste0(gse_id, "_betas.rds")))
+    saveGeoData(gse_id, "betas", betas)
 
     message("preprocessing finished ... ", Sys.time())
 }
 
-preprocessDiagnosticSamples <- function (diag_id, material = "FFPE") {
+preprocessDiagnosticSamples <- function (batch_id, material = "FFPE") {
 
     # get basenames for idat files
-    data_dir = here::here("data", diag_id)
+    data_dir = here::here("data", batch_id)
     basenames <- unique(here::here(data_dir, gsub("_Grn.*", "", gsub("_Red.*", "", list.files(path = data_dir, pattern = "*.idat")))))
 
     message("reading meth arrays ... ", Sys.time())
@@ -187,7 +187,7 @@ preprocessDiagnosticSamples <- function (diag_id, material = "FFPE") {
 
     # apply probe filtering to the MethylSet
     mset <- getFilteredMethylSet(mset)
-    saveRDS(mset, file=here::here("results", paste0(diag_id,"_mset.rds")))
+    saveLabData(batch_id, "mset", mset)
 
     methy <- getMeth(mset)
     unmethy <- getUnmeth(mset)
@@ -195,14 +195,14 @@ preprocessDiagnosticSamples <- function (diag_id, material = "FFPE") {
     message("performing batch adjustments ... ", Sys.time())
 
     # apply batch effects from saved coefs
-    coefs <- loadSavedCoefs(REF_GSE_ID)
+    coefs <- loadGeoData(REF_GSE_ID, "coefs")
     ba <- applyBatchEffectCoefs(methy, unmethy, material, coefs)
 
     # recalculate betas using the Illumina Genome Studio offset
     illumina_offset <- 100
     betas <- ba$methy.ba / (ba$methy.ba + ba$unmethy.ba + illumina_offset)
     betas <- as.data.frame(t(betas))
-    saveRDS(betas, file=here::here("results", paste0(diag_id, "_betas.rds")))
+    saveLabData(batch_id, "betas", betas)
 
     message("preprocessing finished ... ", Sys.time())
 }
