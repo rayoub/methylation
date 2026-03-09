@@ -94,8 +94,8 @@ evaluateLabSampleScores <- function (scores) {
 			names_to = "mc",
 			values_to = "mc_score"
 		) |>
-		group_by(sample_id) |>
-		slice_max(mc_score) 
+		dplyr::group_by(sample_id) |>
+		dplyr::slice_max(mc_score) 
 
 	scores_mcf <- scores_t |>
 		pivot_longer(
@@ -103,20 +103,20 @@ evaluateLabSampleScores <- function (scores) {
 			names_to = "mc",
 			values_to = "mc_score"
 		) |>
-		mutate(
+		dplyr::mutate(
 			mcf = mcf_lookup(mc),
 			.after = mc
 		) |>
-		group_by(sample_id, mcf) |>
-		summarize(
+		dplyr::group_by(sample_id, mcf) |>
+		dplyr::summarize(
 			mcf_score = sum(mc_score),
 			.groups = "drop_last"
 		) |>
-		slice_max(order_by = mcf_score)
+		dplyr::slice_max(order_by = mcf_score)
 
 	scores_j <- scores_mc |> 
-		inner_join(scores_mcf, join_by(sample_id)) |>
-		mutate(
+		dplyr::inner_join(scores_mcf, join_by(sample_id)) |>
+		dplyr::mutate(
 			mc_descr = MC[mc]
 		)
 
