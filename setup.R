@@ -12,7 +12,9 @@ BiocManager::install(version = "3.22")
 
 # install all packages using BiocManager
 BiocManager::install(c(
-  "ade4"
+  "ade4",
+  "bslib",
+  "DT",
   "GEOquery",
   "ggrepel",
   "ggtext",
