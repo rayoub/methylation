@@ -4,6 +4,9 @@ suppressWarnings(suppressPackageStartupMessages({
 	library(DT)
 	library(here)
 	library(bslib)
+	library(ggplot2)
+	library(forcats)
+	library(scales)
 }))
 
 source(here::here("R", "files.R"))
@@ -37,7 +40,8 @@ ui <- fluidPage(
 		tabPanel("View data",
 			br(),
 			selectInput("selectBatch", label = "Select Batch", choices = getBatchIds()),
-			DTOutput("sampleTable")
+			DTOutput("sampleTable"),
+			plotOutput("scoresPlot", width = "800px")
 		)
 	)
 )
@@ -64,16 +68,16 @@ server <- function (input, output, session) {
 
 	# *** View tab
 
-	r_scores <- reactive({
-		message("r_scores triggered")
+	r_scores_t <- reactive({
+		message("r_scores_t triggered")
 		scores <-loadLabData(input$selectBatch, "scores")
 		scores_df <- as.data.frame(scores, row.names = rownames(scores))
 		scores_t <- tibble::rownames_to_column(scores_df, var = "sample_id")
 	})
 
-	output$sampleTable <- renderDT({
-
-		scores_mc <- r_scores() |>
+	r_scores_j <- reactive({
+		message("r_scores_j triggered")
+		scores_mc <- r_scores_t() |>
 			pivot_longer(
 				cols = !(sample_id),
 				names_to = "mc",
@@ -82,7 +86,7 @@ server <- function (input, output, session) {
 			dplyr::group_by(sample_id) |>
 			dplyr::slice_max(mc_score) 
 
-		scores_mcf <- r_scores() |>
+		scores_mcf <- r_scores_t() |>
 			pivot_longer(
 				cols = !(sample_id),
 				names_to = "mc",
@@ -104,8 +108,11 @@ server <- function (input, output, session) {
 			dplyr::mutate(
 				mc_descr = MC[mc]
 			) 
+	})
 
-		datatable(scores_j, 
+	output$sampleTable <- renderDT({
+
+		datatable(r_scores_j(), 
 			colnames = c("Sample ID", "Methylation Class", "MC Score", "Methylation Class Family","MCF Score", "Methylation Class Description"),
 			rowname = FALSE,
 			selection = list(mode = "single", selected = 1),
@@ -117,6 +124,66 @@ server <- function (input, output, session) {
 			formatPercentage(columns = c("mc_score", "mcf_score"), digits = 2) 
 
 	}, server = FALSE)
+	
+	output$scoresPlot <- renderPlot({
+		s <- input$sampleTable_rows_selected
+		if(length(s)) {
+			sample_id <- r_scores_j()[s,"sample_id"] |> pull()
+			scores_mc <- r_scores_t() |>
+				pivot_longer(
+					cols = !(sample_id),
+					names_to = "mc",
+					values_to = "mc_score"
+				) |>
+				dplyr::group_by(sample_id) |>
+				dplyr::filter(
+					sample_id == .env$sample_id,
+					mc_score >= 0.01
+				) |>
+				dplyr::slice_max(mc_score, n = 6) |>
+				dplyr::mutate(
+					mc_descr = MC[mc]
+				) 
+			ggplot(scores_mc, aes(x = fct_reorder(mc_descr, mc_score, .desc = TRUE), y = mc_score)) +
+				geom_col(fill = "steelblue") +
+				scale_y_continuous(labels = scales::percent) + 
+				scale_x_discrete(labels = label_wrap(width = 10)) + 
+				labs(
+					x = "Methylation Class",
+					y = "Score",
+					title = paste("Methylation Class Scores for", sample_id)
+				) +
+				theme(
+					plot.title = element_text(size = 20, face = "bold"), 
+					axis.title.x = element_text(size = 16, face = "bold", margin = margin(t = 20)),
+					axis.title.y = element_text(size = 16, face = "bold", margin = margin(r = 20)),
+					axis.text = element_text(family = "mono", size = 12, face = "bold"),
+					plot.margin = margin(l = 40, b = 40, t = 40)
+				)
+		}
+	})
+
+	#output$scoresPlot <- renderTable({
+	#	s <- input$sampleTable_rows_selected
+	#	message("selected value:", s)
+	#	if(length(s)) {
+	#		sample_id <- r_scores_j()[s,"sample_id"] |> pull()
+	#		scores_mc <- r_scores_t() |>
+	#			pivot_longer(
+	#				cols = !(sample_id),
+	#				names_to = "mc",
+	#				values_to = "mc_score"
+	#			) |>
+	#			dplyr::group_by(sample_id) |>
+	#			dplyr::slice_max(mc_score, n = 6) |>
+	#			dplyr::mutate(
+	#				mc_descr = MC[mc]
+	#			) |>
+	#			dplyr::filter(
+	#				sample_id == .env$sample_id
+	#			)
+	#	}
+	#}, digits = 3)
 
 
 #	observeEvent(r_scores(), {
