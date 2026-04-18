@@ -89,7 +89,7 @@ umapPlot <- function(umap_betas, umap_model, umap_df, centroids, sample_id, samp
 
 umapPlotBatch <- function(batch_id) {
   # output directory
-  output_dir = here::here("output", batch_id, "umap")
+  output_dir = here::here("www", batch_id, "umap")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
   # load umap_betas, umap_df, centroids

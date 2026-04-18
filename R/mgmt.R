@@ -123,7 +123,7 @@ mgmtPlot <- function(batch_id, sample_id, preds) {
 
 mgmtPlotBatch <- function(batch_id) {
   # output directory
-  output_dir = here::here("output", batch_id, "mgmt")
+  output_dir = here::here("www", batch_id, "mgmt")
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
   # load mset

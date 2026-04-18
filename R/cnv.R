@@ -6,7 +6,7 @@ suppressWarnings(suppressPackageStartupMessages({
 }))
 
 cnvPlotBatch <- function(batch_id) {
-	output_dir = here::here("output", batch_id, "cnv")
+	output_dir = here::here("www", batch_id, "cnv")
 	sample_dir <- here::here("data", "lab", batch_id)
 
 	dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
