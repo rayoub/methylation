@@ -7,7 +7,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager", repos = "http://cran.us.r-project.org")
 }
 
-# BiocConductor version 3.22 is compatible with version 4.5.2+
+# BiocConductor version 3.22 is compatible with version 4.5.3+
 BiocManager::install(version = "3.22")
 
 # install all packages using BiocManager
@@ -40,7 +40,9 @@ BiocManager::install(c(
 # install conumee2 from source
 install.packages("devtools")
 devtools::install_github("hovestadtlab/conumee2", subdir = "conumee2")
-devtools::install_github("badozor/mgmtstp27")
+
+# install mgmt from downloaded repo (badozor/mgmtstp27)
+install.packages("C:\\git-repos\\mgmtstp27\\archive\\mgmtstp27_0.7.zip", repos=NULL)
 
 # to use sesame
 library("sesame")
